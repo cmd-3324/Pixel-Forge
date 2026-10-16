@@ -1,0 +1,33 @@
+[project]
+name = "pixel-forge"
+version = "0.1.0"
+description = "Convert images between formats from the command line."
+readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [
+    { name = "Max Miller", email = "ali.alipour4576@gmail.com" }
+]
+requires-python = ">=3.10"
+keywords = ["image", "converter", "cli", "pillow"]
+classifiers = [
+    "Environment :: Console",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Topic :: Multimedia :: Graphics :: Graphics Conversion",
+]
+dependencies = [
+    "typer>=0.12",
+    "rich>=13.0",
+    "pillow>=10.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/YOUR-USERNAME/pixel-forge"
+
+[project.scripts]
+convertme = "pixel_forge.cli:app"
+
+[build-system]
+requires = ["uv_build>=0.12.22,<0.13.0"]
+build-backend = "uv_build"
