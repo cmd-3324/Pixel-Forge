@@ -23,7 +23,7 @@ dependencies = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/YOUR-USERNAME/pixel-forge"
+Homepage = "https://github.com/cmd-3324/pixel-forge"
 
 [project.scripts]
 convertme = "pixel_forge.cli:app"
