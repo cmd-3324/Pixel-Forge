@@ -1,42 +1,29 @@
-"""Command-line interface for Pixel-Forge (``convertme``)."""
+"""convertme: convert an image to another format."""
 
 from pathlib import Path
 from typing import Annotated, Optional
 
 import typer
 from rich.console import Console
-from rich.markup import escape
-
-from pixel_forge.formats import OutputFormat
 
 app = typer.Typer(
-    name="convertme",
-    help="Convert an image to another format.",
-    epilog="Exit status: 0 = success, 1 = conversion failed, 2 = bad usage.",
-    no_args_is_help=True,
     add_completion=False,
+    no_args_is_help=True,
+    help="Convert an image to another format.",
     context_settings={"help_option_names": ["-h", "--help"]},
 )
-
 console = Console()
-err_console = Console(stderr=True)
+err = Console(stderr=True)
 
-
-def _version_callback(value: bool) -> None:
-    if value:
-        from importlib.metadata import version  # lazy: only needed here
-
-        typer.echo(f"convertme {version('pixel-forge')}")
-        raise typer.Exit()
-
-
-def _human_size(num: int) -> str:
-    size = float(num)
-    for unit in ("B", "KB", "MB", "GB"):
-        if size < 1024 or unit == "GB":
-            return f"{size:.0f} {unit}" if unit == "B" else f"{size:.1f} {unit}"
-        size /= 1024
-    return f"{num} B"  # unreachable; keeps type-checkers happy
+FORMATS = {
+    "png": "PNG",
+    "jpg": "JPEG",
+    "jpeg": "JPEG",
+    "webp": "WEBP",
+    "gif": "GIF",
+    "bmp": "BMP",
+    "tiff": "TIFF",
+}
 
 
 @app.command()
@@ -44,23 +31,12 @@ def main(
     source: Annotated[
         Path,
         typer.Argument(
-            exists=True,
-            file_okay=True,
-            dir_okay=False,
-            readable=True,
-            resolve_path=True,
-            metavar="SOURCE",
-            help="Image file to convert.",
+            exists=True, dir_okay=False, readable=True, help="Image to convert."
         ),
     ],
-    fmt: Annotated[
-        OutputFormat,
-        typer.Option(
-            "--to",
-            "-t",
-            case_sensitive=False,
-            help="Target format.",
-        ),
+    to: Annotated[
+        str,
+        typer.Option("--to", "-t", help="Target format: " + ", ".join(FORMATS) + "."),
     ],
     dest: Annotated[
         Optional[Path],
@@ -68,60 +44,39 @@ def main(
             "--dest",
             "-d",
             file_okay=False,
-            dir_okay=True,
-            resolve_path=True,
-            help="Folder to save into (created if missing). [default: current dir]",
-            show_default=False,
-        ),
-    ] = None,
-    quality: Annotated[
-        Optional[int],
-        typer.Option(
-            "--quality",
-            "-q",
-            min=1,
-            max=100,
-            help="Quality for JPEG/WEBP output (1-100).",
-        ),
-    ] = None,
-    force: Annotated[
-        bool,
-        typer.Option("--force", "-f", help="Overwrite the output file if it exists."),
-    ] = False,
-    version: Annotated[
-        Optional[bool],
-        typer.Option(
-            "--version",
-            "-V",
-            callback=_version_callback,
-            is_eager=True,
-            help="Show the version and exit.",
+            help="Folder to save into (default: current folder).",
         ),
     ] = None,
 ) -> None:
-    """Convert SOURCE to another image format.
+    """Convert SOURCE to another format.
 
-    Examples:  convertme photo.png --to webp   |   convertme a.jpg -t png -d ./out
+    Example: convertme photo.png --to webp
     """
-    # Lazy import: Pillow is the slow part, so --help/--version never pay for it.
-    from pixel_forge.core import ConversionError, convert
+    from PIL import Image  # imported here so --help stays instant
 
-    dest_dir = dest if dest is not None else Path.cwd()
+    fmt = to.lower().lstrip(".")
+    if fmt not in FORMATS:
+        err.print(f"[red]error:[/red] unsupported format '{to}'.")
+        raise typer.Exit(2)
+
+    folder = dest or Path.cwd()
+    folder.mkdir(parents=True, exist_ok=True)
+    output = folder / f"{source.stem}.{fmt}"
+    if output.exists():
+        err.print(f"[red]error:[/red] {output} already exists.")
+        raise typer.Exit(1)
 
     try:
-        with console.status("Converting..."):
-            result = convert(source, dest_dir, fmt, quality=quality, force=force)
-    except ConversionError as exc:
-        err_console.print(f"[red]error:[/red] {escape(str(exc))}")
+        with Image.open(source) as img:
+            if FORMATS[fmt] == "JPEG" and img.mode != "RGB":
+                # JPEG has no transparency: paste onto a white background.
+                rgba = img.convert("RGBA")
+                img = Image.new("RGB", rgba.size, "white")
+                img.paste(rgba, mask=rgba.getchannel("A"))
+            img.save(output, format=FORMATS[fmt])
+    except OSError as exc:
+        output.unlink(missing_ok=True)
+        err.print(f"[red]error:[/red] could not convert {source.name}: {exc}")
         raise typer.Exit(1) from exc
 
-    change = ""
-    if result.source_size:
-        pct = (result.output_size - result.source_size) / result.source_size * 100
-        change = f", {pct:+.0f}%"
-    console.print(
-        f"[green]OK[/green] {escape(result.source.name)} -> "
-        f"[bold]{escape(str(result.output))}[/bold] "
-        f"[dim]({_human_size(result.source_size)} -> "
-        f"{_human_size(result.output_size)}{change})[/dim]"
-    )
+    console.print(f"[green]Saved[/green] {output}")
