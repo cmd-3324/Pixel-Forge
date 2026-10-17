@@ -80,3 +80,8 @@ def main(
         raise typer.Exit(1) from exc
 
     console.print(f"[green]Saved[/green] {output}")
+
+
+
+if __name__ == "__main__":
+    app()
