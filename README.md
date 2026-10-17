@@ -19,6 +19,9 @@ or with pipx:
 pipx install pixel-forge
 ```
 
+_or Just Download & click .exe file in releases._
+
+
 Requires Python 3.10+.
 
 ## Usage
