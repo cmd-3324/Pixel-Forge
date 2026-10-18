@@ -18,6 +18,20 @@ or with pipx:
 ```console
 pipx install pixel-forge
 ```
+## OR
+
+```console
+gh repo clone cmd-3324/Pixel-Forge
+```
+Then:
+```console
+cd Pixel-Forge
+```
+Finally:
+
+```console
+pipx install . 
+```
 
 _or Just Download & click .exe file in releases._
 
