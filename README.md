@@ -59,12 +59,12 @@ convertme photo.png -t jpg -d ./out
 
 ### Supported formats
 
-`png`, `jpg`, `jpeg`, `webp`, `gif`, `bmp`, `tiff`
+`png`, `jpg`, `jpeg`, `webp`, `gif`, `bmp`, `tiff`, `tif`, `ico`, `icns`, `pdf`, `ppm`, `tga`, `jp2`
 
 ## Behavior
 
 - Existing files are never overwritten.
-- Converting to JPEG puts transparent areas on a white background.
+- Formats without transparency (JPEG, PDF, PPM) get a white background where the image is transparent.
 
 ## Development
 
