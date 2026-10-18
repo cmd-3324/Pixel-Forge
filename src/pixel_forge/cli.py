@@ -89,7 +89,7 @@ def main(
             img.save(output, format=kind)
     except OSError as exc:
         output.unlink(missing_ok=True)
-        err.print(f"[red]error:[/red] unsupported format '{to}'. Choose from: {', '.join(FORMATS)}")
+        err.print(f"[red]error:[/red] could not convert {source.name}: {exc}")
         raise typer.Exit(1) from exc
 
     console.print(f"[green]Saved[/green] {output}")
