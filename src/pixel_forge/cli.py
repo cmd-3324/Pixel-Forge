@@ -6,6 +6,11 @@ from typing import Annotated, Optional
 import typer
 from rich.console import Console
 
+App = typer.Typer(
+    add_completion=False,
+
+)
+
 app = typer.Typer(
     add_completion=False,
     no_args_is_help=True,
