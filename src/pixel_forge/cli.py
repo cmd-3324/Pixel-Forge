@@ -6,6 +6,8 @@ from typing import Annotated, Optional
 import typer
 from rich.console import Console
 
+
+
 app = typer.Typer(
     add_completion=False,
     no_args_is_help=True,
@@ -23,8 +25,15 @@ FORMATS = {
     "gif": "GIF",
     "bmp": "BMP",
     "tiff": "TIFF",
+    "tif": "TIFF",
+    "ico": "ICO",
+    "icns": "ICNS",
+    "pdf": "PDF",
+    "ppm": "PPM",
+    "tga": "TGA",
+    "jp2": "JPEG2000",
 }
-
+NO_ALPHA = {"JPEG", "PDF", "PPM"}
 
 @app.command()
 def main(
@@ -67,13 +76,17 @@ def main(
         raise typer.Exit(1)
 
     try:
+
+
         with Image.open(source) as img:
-            if FORMATS[fmt] == "JPEG" and img.mode != "RGB":
-                # JPEG has no transparency: paste onto a white background.
+            kind = FORMATS[fmt]
+            if kind in NO_ALPHA and img.mode != "RGB":
                 rgba = img.convert("RGBA")
                 img = Image.new("RGB", rgba.size, "white")
                 img.paste(rgba, mask=rgba.getchannel("A"))
-            img.save(output, format=FORMATS[fmt])
+            elif kind in ("ICO", "ICNS"):
+                img = img.convert("RGBA")
+            img.save(output, format=kind)
     except OSError as exc:
         output.unlink(missing_ok=True)
         err.print(f"[red]error:[/red] could not convert {source.name}: {exc}")
